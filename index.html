@@ -4,7 +4,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>memo2（通常問題のみ）</title>
-  <!-- ※ CSSは前回のものをそのまま使ってください（ここでは読み込みを追加していません） -->
+ <style>
+    body { font-family: sans-serif; margin: 0; background: #f4f4f4; }
+    .tabs { display: flex; background: #333; color: white; position: sticky; top: 0; z-index: 1000; }
+    .tab { padding: 10px 20px; cursor: pointer; }
+    .tab.active { background: #555; }
+    .content { display: none; padding: 20px; }
+    .content.active { display: block; }
+    textarea, input[type="text"] { width: 100%; padding: 10px; margin-top: 10px; }
+    textarea { resize: vertical; }
+    button { margin-top: 10px; padding: 10px 20px; }
+    .btn-group button { margin-right: 10px; }
+    .score { font-weight: bold; margin-left: 10px; }
+    .score.red { color: red; }
+    .score.green { color: green; }
+    .edit-icon { cursor: pointer; margin-left: 10px; }
+    .edit-field { width: 100%; padding: 5px; margin-top: 5px; display: block; }
+    .input-blank { display: inline-block; width: 120px; margin: 0 5px; }
+  </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
