@@ -2,131 +2,110 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <!-- iPhone最適化（安全域/PWA対応は必要なら維持） -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>memo2（通常問題のみ）</title>
-  <link rel="stylesheet" href="./memo2_style.css" />
+  <!-- ※ CSSは前回のものをそのまま使ってください（ここでは読み込みを追加していません） -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <div class="safe-area">
-    <header class="app-header">
-      <h1 class="app-title">memo2（通常問題のみ）</h1>
-    </header>
+  <h1>memo2（通常問題のみ）</h1>
 
-    <!-- 上部固定タブ -->
-    <nav class="tabs" role="tablist" aria-label="メインタブ">
-      <button class="tab active" role="tab" aria-selected="true" aria-controls="exercise-tab" id="tab-exercise" onclick="switchTab(0)">演習（A）</button>
-      <button class="tab" role="tab" aria-selected="false" aria-controls="input-tab" id="tab-input" onclick="switchTab(1)">入力（B）</button>
-      <button class="tab" role="tab" aria-selected="false" aria-controls="confirm-tab" id="tab-confirm" onclick="switchTab(2)">確認（C）</button>
-      <button class="tab" role="tab" aria-selected="false" aria-controls="graph-tab" id="tab-graph" onclick="switchTab(3)">グラフ（D）</button>
-    </nav>
-
-    <!-- ========== A: 演習タブ ========== -->
-    <main class="content active" id="exercise-tab" role="tabpanel" aria-labelledby="tab-exercise">
-      <h2 id="exerciseQuestion" class="question">ここに問題が表示されます</h2>
-
-      <!-- 正答確認 -->
-      <div class="stack">
-        <button class="btn btn-primary btn-block" onclick="checkCorrectAnswer()">正答確認</button>
-        <p id="correctAnswer" class="answer"></p>
-      </div>
-
-      <!-- 〇△× -->
-      <div class="btn-group center">
-        <button class="btn judge" onclick="gradeAnswer('maru')">○</button>
-        <button class="btn judge" onclick="gradeAnswer('sankaku')">△</button>
-        <button class="btn judge" onclick="gradeAnswer('batsu')">×</button>
-      </div>
-
-      <!-- 出題開始 -->
-      <div class="stack">
-        <button class="btn btn-accent btn-block" onclick="startExercise()">通常出題スタート</button>
-        <button class="btn btn-block" onclick="startLowScoreExercise()">スコア-3以下だけ出題</button>
-        <button class="btn btn-block" onclick="startScoreUnderThreeExercise()">スコア+4.5以下の問題だけ出題</button>
-      </div>
-
-      <!-- カテゴリ出題 -->
-      <div class="row">
-        <select id="categorySelect" class="select"></select>
-        <button class="btn" onclick="startExerciseByCategory()">このカテゴリで出題</button>
-      </div>
-    </main>
-
-    <!-- ========== B: 入力タブ（穴埋め＆音声入力 廃止） ========== -->
-    <section class="content" id="input-tab" role="tabpanel" aria-labelledby="tab-input">
-      <h2>通常問題入力</h2>
-
-      <label class="label" for="newQuestion">問題</label>
-      <textarea id="newQuestion" placeholder="問題を入力"></textarea>
-
-      <label class="label" for="newAnswer">解答</label>
-      <textarea id="newAnswer" placeholder="解答を入力"></textarea>
-
-      <label class="label" for="newCategory">カテゴリ</label>
-      <input type="text" id="newCategory" placeholder="カテゴリを入力" />
-
-      <div class="stack">
-        <button class="btn btn-primary" onclick="saveQuestion()">保存</button>
-      </div>
-    </section>
-
-    <!-- ========== C: 確認タブ（穴埋め関連廃止） ========== -->
-    <section class="content" id="confirm-tab" role="tabpanel" aria-labelledby="tab-confirm">
-      <h2>✅ 通常問題一覧・編集</h2>
-
-      <input type="file" id="fileInputNormal" />
-      <div class="row wrap" style="margin-top:8px;">
-        <button class="btn" onclick="downloadQuestions()">通常問題を書き出す</button>
-        <button class="btn" onclick="uploadQuestions()">通常問題を読み込む</button>
-      </div>
-
-      <ul id="questionList" class="list"></ul>
-    </section>
-
-    <!-- ========== D: グラフタブ ＋ 記録欄 ========== -->
-    <section class="content" id="graph-tab" role="tabpanel" aria-labelledby="tab-graph">
-      <h2>カテゴリ別 正答率グラフ</h2>
-
-      <div class="row">
-        <label class="label" for="scoreThresholdSelect">スコア条件</label>
-        <select id="scoreThresholdSelect" class="select" onchange="renderChartByThreshold()">
-          <option value="3">スコア3以上</option>
-          <option value="5">スコア5以上</option>
-          <option value="7">スコア7以上</option>
-          <option value="10">スコア10以上</option>
-        </select>
-      </div>
-
-      <canvas id="scoreChart" width="400" height="200" class="chart"></canvas>
-
-      <!-- ▼ 記録欄（例示のテーブル／後でJSで差し替え可能） -->
-      <h3 style="margin-top:20px;">記録欄</h3>
-      <div class="record-card">
-        <table id="recordsTable" class="table">
-          <thead>
-            <tr>
-              <th style="text-align:left;">日付</th>
-              <th style="text-align:right;">正答数</th>
-            </tr>
-          </thead>
-          <tbody id="recordsTbody">
-            <!-- 例示行（必要なら削除OK） -->
-            <tr>
-              <td>2025　1/1（水）</td>
-              <td style="text-align:right;">50 / 60</td>
-            </tr>
-            <tr>
-              <td>2025　1/2（木）</td>
-              <td style="text-align:right;">60 / 80</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+  <!-- 上部固定タブ（既存CSSの .tabs / .tab を使用） -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(0)">演習（A）</div>
+    <div class="tab" onclick="switchTab(1)">入力（B）</div>
+    <div class="tab" onclick="switchTab(2)">確認（C）</div>
+    <div class="tab" onclick="switchTab(3)">グラフ（D）</div>
   </div>
 
-  <!-- JSはこの後いただいた内容に合わせて全面整理します -->
+  <!-- ========== A: 演習タブ ========== -->
+  <div class="content active" id="exercise-tab">
+    <h2 id="exerciseQuestion">ここに問題が表示されます</h2>
+
+    <!-- 正答確認 -->
+    <button onclick="checkCorrectAnswer()">正答確認</button>
+    <p id="correctAnswer"></p>
+
+    <!-- 〇△× -->
+    <div class="btn-group" style="display:flex; justify-content:center;">
+      <button onclick="gradeAnswer('maru')">○</button>
+      <button onclick="gradeAnswer('sankaku')">△</button>
+      <button onclick="gradeAnswer('batsu')">×</button>
+    </div>
+
+    <!-- 出題開始 -->
+    <button onclick="startExercise()">通常出題スタート</button>
+    <button onclick="startLowScoreExercise()">スコア-3以下だけ出題</button>
+    <button onclick="startScoreUnderThreeExercise()">スコア+4.5以下の問題だけ出題</button>
+
+    <!-- カテゴリ出題 -->
+    <div style="margin-top:10px;">
+      <select id="categorySelect"></select>
+      <button onclick="startExerciseByCategory()">このカテゴリで出題</button>
+    </div>
+  </div>
+
+  <!-- ========== B: 入力タブ（穴埋め＆音声入力 廃止） ========== -->
+  <div class="content" id="input-tab">
+    <h2>通常問題入力</h2>
+
+    <textarea id="newQuestion" placeholder="問題を入力"></textarea>
+    <textarea id="newAnswer" placeholder="解答を入力"></textarea>
+    <input type="text" id="newCategory" placeholder="カテゴリを入力" />
+    <br />
+    <button onclick="saveQuestion()">保存</button>
+  </div>
+
+  <!-- ========== C: 確認タブ（穴埋め関連 廃止） ========== -->
+  <div class="content" id="confirm-tab">
+    <h2>✅ 通常問題一覧・編集</h2>
+
+    <input type="file" id="fileInputNormal" />
+    <div style="margin: 10px 0;">
+      <button onclick="downloadQuestions()">通常問題を書き出す</button>
+      <button onclick="uploadQuestions()">通常問題を読み込む</button>
+    </div>
+
+    <ul id="questionList"></ul>
+  </div>
+
+  <!-- ========== D: グラフタブ ＋ 記録欄 ========== -->
+  <div class="content" id="graph-tab">
+    <h2>カテゴリ別 正答率グラフ</h2>
+
+    <label for="scoreThresholdSelect">スコア条件：</label>
+    <select id="scoreThresholdSelect" onchange="renderChartByThreshold()">
+      <option value="3">スコア3以上</option>
+      <option value="5">スコア5以上</option>
+      <option value="7">スコア7以上</option>
+      <option value="10">スコア10以上</option>
+    </select>
+
+    <canvas id="scoreChart" width="400" height="200"></canvas>
+
+    <!-- ▼ 記録欄（例示の行は後でJSで置換/追記されます） -->
+    <h3 style="margin-top:20px;">記録欄</h3>
+    <table style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="text-align:left; padding:6px 0;">日付</th>
+          <th style="text-align:right; padding:6px 0;">正答数</th>
+        </tr>
+      </thead>
+      <tbody id="recordsTbody">
+        <tr>
+          <td>2025　1/1（水）</td>
+          <td style="text-align:right;">50 / 60</td>
+        </tr>
+        <tr>
+          <td>2025　1/2（木）</td>
+          <td style="text-align:right;">60 / 80</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ロジック（この後共有いただいたJSをベースに削除・再構成した版） -->
   <script src="./memo2_logic.js"></script>
 </body>
 </html>
