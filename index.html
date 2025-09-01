@@ -1,213 +1,132 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <!-- iPhone最適化 -->
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="theme-color" content="#0f1115" />
-  <!-- ここに後で PWA 用の manifest を追加できます -->
-  <!-- <link rel="manifest" href="./manifest.webmanifest" /> -->
-  <!-- iOS ホームアイコン（任意のPNGへ差し替え） -->
-  <link rel="apple-touch-icon" href="./icon-180.png" />
-
-  <title>暗記アプリDX</title>
-  <link rel="stylesheet" href="./styles.css" />
+  <meta charset="UTF-8" />
+  <!-- iPhone最適化（安全域/PWA対応は必要なら維持） -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>memo2（通常問題のみ）</title>
+  <link rel="stylesheet" href="./memo2_style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <!-- 固定ヘッダー（ブランド + タブ） -->
-  <header class="app-header">
-    <div class="container header-inner">
-      <a class="brand" href="#top" aria-label="トップへ">
-        <span class="brand-badge" aria-hidden="true"></span>
-        <span class="brand-title">暗記アプリDX</span>
-      </a>
+  <div class="safe-area">
+    <header class="app-header">
+      <h1 class="app-title">memo2（通常問題のみ）</h1>
+    </header>
 
-      <!-- 上部固定タブ（アンカーで各セクションへ移動） -->
-      <nav class="tabs" role="navigation" aria-label="Main Tabs">
-        <a class="tab is-active" href="#tabA" aria-label="演習（A）へ移動">演習（A）</a>
-        <a class="tab" href="#tabB" aria-label="入力（B）へ移動">入力（B）</a>
-        <a class="tab" href="#tabC" aria-label="確認（C）へ移動">確認（C）</a>
-        <a class="tab" href="#tabD" aria-label="グラフ（D）へ移動">グラフ（D）</a>
-      </nav>
-    </div>
-  </header>
+    <!-- 上部固定タブ -->
+    <nav class="tabs" role="tablist" aria-label="メインタブ">
+      <button class="tab active" role="tab" aria-selected="true" aria-controls="exercise-tab" id="tab-exercise" onclick="switchTab(0)">演習（A）</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="input-tab" id="tab-input" onclick="switchTab(1)">入力（B）</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="confirm-tab" id="tab-confirm" onclick="switchTab(2)">確認（C）</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="graph-tab" id="tab-graph" onclick="switchTab(3)">グラフ（D）</button>
+    </nav>
 
-  <!-- ヘッダー固定のぶんだけ余白を確保 -->
-  <div class="header-spacer" aria-hidden="true"></div>
+    <!-- ========== A: 演習タブ ========== -->
+    <main class="content active" id="exercise-tab" role="tabpanel" aria-labelledby="tab-exercise">
+      <h2 id="exerciseQuestion" class="question">ここに問題が表示されます</h2>
 
-  <main id="top" class="container app-main">
-    <!-- ===== A: 演習 ===== -->
-    <section id="tabA" class="section panel" aria-labelledby="tabA-heading">
-      <h2 id="tabA-heading" class="sr-only">演習（A）</h2>
-
-      <!-- ステータスバー -->
-      <div class="status-bar card">
-        <div class="stat-item"><span id="statCorrect">正答数: 0 / 0</span></div>
-        <div class="stat-actions">
-          <button class="btn ghost" id="btnResetStats" type="button">リセット</button>
-        </div>
+      <!-- 正答確認 -->
+      <div class="stack">
+        <button class="btn btn-primary btn-block" onclick="checkCorrectAnswer()">正答確認</button>
+        <p id="correctAnswer" class="answer"></p>
       </div>
 
-      <!-- 問題カード -->
-      <article class="card question-card">
-        <header class="card-header">
-          <h3 class="question-title" id="questionTitle">ここに問題が表示されます</h3>
-        </header>
-        <div class="card-body">
-          <p class="question-body" id="questionBody"></p>
+      <!-- 〇△× -->
+      <div class="btn-group center">
+        <button class="btn judge" onclick="gradeAnswer('maru')">○</button>
+        <button class="btn judge" onclick="gradeAnswer('sankaku')">△</button>
+        <button class="btn judge" onclick="gradeAnswer('batsu')">×</button>
+      </div>
 
-          <div class="answer-reveal" id="answerReveal" aria-live="polite">
-            <span class="answer-label">正解：</span>
-            <span class="answer-text" id="answerText"></span>
-          </div>
+      <!-- 出題開始 -->
+      <div class="stack">
+        <button class="btn btn-accent btn-block" onclick="startExercise()">通常出題スタート</button>
+        <button class="btn btn-block" onclick="startLowScoreExercise()">スコア-3以下だけ出題</button>
+        <button class="btn btn-block" onclick="startScoreUnderThreeExercise()">スコア+4.5以下の問題だけ出題</button>
+      </div>
 
-          <div class="actions-row">
-            <button class="btn primary" id="btnToggleAnswer" type="button">正答確認</button>
-          </div>
+      <!-- カテゴリ出題 -->
+      <div class="row">
+        <select id="categorySelect" class="select"></select>
+        <button class="btn" onclick="startExerciseByCategory()">このカテゴリで出題</button>
+      </div>
+    </main>
 
-          <div class="grade-row" role="group" aria-label="採点">
-            <button class="btn success large" id="btnGradeMaru" type="button">○</button>
-            <button class="btn warning large" id="btnGradeSankaku" type="button">△</button>
-            <button class="btn danger large" id="btnGradeBatsu" type="button">×</button>
-          </div>
-        </div>
-      </article>
+    <!-- ========== B: 入力タブ（穴埋め＆音声入力 廃止） ========== -->
+    <section class="content" id="input-tab" role="tabpanel" aria-labelledby="tab-input">
+      <h2>通常問題入力</h2>
 
-      <!-- 出題コントロール -->
-      <section class="card control-card">
-        <header class="card-header">
-          <h3>出題コントロール</h3>
-        </header>
-        <div class="card-body control-grid">
-          <!-- 1) 通常スタート -->
-          <div class="control-block">
-            <label class="control-label">全問題から出題</label>
-            <div class="control-actions">
-              <button class="btn primary" id="btnStartAll" type="button">出題スタート</button>
-            </div>
-          </div>
+      <label class="label" for="newQuestion">問題</label>
+      <textarea id="newQuestion" placeholder="問題を入力"></textarea>
 
-          <!-- 2) スコアしきい値指定 -->
-          <div class="control-block">
-            <label class="control-label" for="scoreThreshold">スコア ≤ しきい値 から出題</label>
-            <div class="control-actions">
-              <input type="number" id="scoreThreshold" class="input number" step="0.5" value="3" inputmode="decimal" />
-              <button class="btn" id="btnStartByThreshold" type="button">しきい値で出題</button>
-            </div>
-            <p class="control-hint">例：3 / 4.5 など自由に変更できます</p>
-          </div>
+      <label class="label" for="newAnswer">解答</label>
+      <textarea id="newAnswer" placeholder="解答を入力"></textarea>
 
-          <!-- 3) カテゴリ別出題 -->
-          <div class="control-block">
-            <label class="control-label" for="categorySelect">カテゴリ別に出題</label>
-            <div class="control-actions">
-              <select id="categorySelect" class="input select">
-                <option value="">すべて</option>
-              </select>
-              <button class="btn" id="btnStartByCategory" type="button">このカテゴリで出題</button>
-            </div>
-          </div>
+      <label class="label" for="newCategory">カテゴリ</label>
+      <input type="text" id="newCategory" placeholder="カテゴリを入力" />
 
-          <!-- 4) カテゴリ × しきい値 -->
-          <div class="control-block">
-            <label class="control-label" for="categorySelectCombo">カテゴリ & スコア ≤ しきい値</label>
-            <div class="control-actions combo">
-              <select id="categorySelectCombo" class="input select">
-                <option value="">すべて</option>
-              </select>
-              <input type="number" id="scoreThresholdCombo" class="input number" step="0.5" value="3" inputmode="decimal" />
-              <button class="btn" id="btnStartByCategoryAndThreshold" type="button">カテゴリ×しきい値で出題</button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <div class="stack">
+        <button class="btn btn-primary" onclick="saveQuestion()">保存</button>
+      </div>
     </section>
 
-    <!-- ===== B: 入力 ===== -->
-    <section id="tabB" class="section panel" aria-labelledby="tabB-heading">
-      <h2 id="tabB-heading" class="sr-only">入力（B）</h2>
+    <!-- ========== C: 確認タブ（穴埋め関連廃止） ========== -->
+    <section class="content" id="confirm-tab" role="tabpanel" aria-labelledby="tab-confirm">
+      <h2>✅ 通常問題一覧・編集</h2>
 
-      <article class="card input-card">
-        <header class="card-header">
-          <h3>問題の作成</h3>
-        </header>
-        <div class="card-body input-grid">
-          <!-- 問題 -->
-          <div class="field">
-            <label for="newQuestion" class="label">問題</label>
-            <textarea id="newQuestion" class="input textarea" rows="4" placeholder="例：○○を4つ述べよ など"></textarea>
-          </div>
+      <input type="file" id="fileInputNormal" />
+      <div class="row wrap" style="margin-top:8px;">
+        <button class="btn" onclick="downloadQuestions()">通常問題を書き出す</button>
+        <button class="btn" onclick="uploadQuestions()">通常問題を読み込む</button>
+      </div>
 
-          <!-- 解答（複数可） -->
-          <div class="field">
-            <div class="label-row">
-              <label class="label">解答（複数可）</label>
-              <div class="answer-actions">
-                <button class="btn ghost" id="btnAddAnswer" type="button">＋ 解答欄を追加</button>
-                <button class="btn ghost" id="btnRemoveAnswer" type="button">－ 最後を削除</button>
-              </div>
-            </div>
-
-            <div id="answersList" class="answers-list">
-              <div class="answer-row" data-answer-index="0">
-                <input type="text" class="input text answer-input" placeholder="解答1" />
-              </div>
-            </div>
-            <p class="control-hint">※ 解答欄は問題の内容に応じて自由に増減できます</p>
-          </div>
-
-          <!-- カテゴリ -->
-          <div class="field">
-            <label for="newCategory" class="label">カテゴリ</label>
-            <input id="newCategory" class="input text" type="text" placeholder="例：歴史 / 英単語 / 法規 など" />
-          </div>
-
-          <!-- 保存 -->
-          <div class="field actions-row">
-            <button class="btn primary" id="btnSaveQuestion" type="button">保存</button>
-            <button class="btn ghost" id="btnClearForm" type="button">クリア</button>
-          </div>
-        </div>
-      </article>
+      <ul id="questionList" class="list"></ul>
     </section>
 
-    <!-- ===== C: 確認（箱） ===== -->
-    <section id="tabC" class="section panel" aria-labelledby="tabC-heading">
-      <h2 id="tabC-heading" class="sr-only">確認（C）</h2>
+    <!-- ========== D: グラフタブ ＋ 記録欄 ========== -->
+    <section class="content" id="graph-tab" role="tabpanel" aria-labelledby="tab-graph">
+      <h2>カテゴリ別 正答率グラフ</h2>
 
-      <article class="card">
-        <header class="card-header">
-          <h3>確認（C）</h3>
-        </header>
-        <div class="card-body">
-          <p>ここに問題一覧や編集、データ入出力などを実装予定です。</p>
-          <div id="manageArea" class="manage-area"></div>
-        </div>
-      </article>
+      <div class="row">
+        <label class="label" for="scoreThresholdSelect">スコア条件</label>
+        <select id="scoreThresholdSelect" class="select" onchange="renderChartByThreshold()">
+          <option value="3">スコア3以上</option>
+          <option value="5">スコア5以上</option>
+          <option value="7">スコア7以上</option>
+          <option value="10">スコア10以上</option>
+        </select>
+      </div>
+
+      <canvas id="scoreChart" width="400" height="200" class="chart"></canvas>
+
+      <!-- ▼ 記録欄（例示のテーブル／後でJSで差し替え可能） -->
+      <h3 style="margin-top:20px;">記録欄</h3>
+      <div class="record-card">
+        <table id="recordsTable" class="table">
+          <thead>
+            <tr>
+              <th style="text-align:left;">日付</th>
+              <th style="text-align:right;">正答数</th>
+            </tr>
+          </thead>
+          <tbody id="recordsTbody">
+            <!-- 例示行（必要なら削除OK） -->
+            <tr>
+              <td>2025　1/1（水）</td>
+              <td style="text-align:right;">50 / 60</td>
+            </tr>
+            <tr>
+              <td>2025　1/2（木）</td>
+              <td style="text-align:right;">60 / 80</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
+  </div>
 
-    <!-- ===== D: グラフ（箱） ===== -->
-    <section id="tabD" class="section panel" aria-labelledby="tabD-heading">
-      <h2 id="tabD-heading" class="sr-only">グラフ（D）</h2>
-
-      <article class="card">
-        <header class="card-header">
-          <h3>グラフ（D）</h3>
-        </header>
-        <div class="card-body">
-          <p>ここにカテゴリ別スコアのグラフを実装予定です。</p>
-          <div id="chartArea" class="chart-area"></div>
-        </div>
-      </article>
-    </section>
-  </main>
-
-  <footer class="app-footer">
-    <div class="container">
-      <small>&copy; <span id="yearCopy">2025</span> 暗記アプリDX</small>
-    </div>
-  </footer>
+  <!-- JSはこの後いただいた内容に合わせて全面整理します -->
+  <script src="./memo2_logic.js"></script>
 </body>
 </html>
