@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+  <title>暗記アプリDX</title>
+
+  <!-- スタイルとスクリプト（内容は後で別ファイルに実装） -->
+  <link rel="stylesheet" href="./styles.css" />
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <!-- ========== ヘッダー / ブランド ========== -->
+  <header class="app-header">
+    <div class="container header-inner">
+      <div class="brand">
+        <div class="brand-badge" aria-hidden="true"></div>
+        <div class="brand-title">暗記アプリDX</div>
+      </div>
+      <!-- タブナビゲーション -->
+      <nav class="tabs" role="tablist" aria-label="Main Tabs">
+        <button class="tab active" role="tab" aria-selected="true" aria-controls="tabA" id="tabBtnA" data-target="#tabA">演習（A）</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="tabB" id="tabBtnB" data-target="#tabB">入力（B）</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="tabC" id="tabBtnC" data-target="#tabC">確認（C）</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="tabD" id="tabBtnD" data-target="#tabD">グラフ（D）</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ========== コンテンツ ========== -->
+  <main class="container app-main">
+    <!-- ===== A: 演習タブ ===== -->
+    <section class="panel active" id="tabA" role="tabpanel" aria-labelledby="tabBtnA">
+      <!-- ステータスバー（正答数など） -->
+      <div class="status-bar" id="statusBar">
+        <div class="stat-item">
+          <span id="statCorrect">正答数: 0 / 0</span>
+        </div>
+        <div class="stat-actions">
+          <button class="btn ghost" id="btnResetStats" title="正答数リセット">リセット</button>
+        </div>
+      </div>
+
+      <!-- 問題表示エリア -->
+      <article class="card question-card" id="questionCard">
+        <header class="card-header">
+          <h2 class="question-title" id="questionTitle">ここに問題が表示されます</h2>
+        </header>
+        <div class="card-body">
+          <p class="question-body" id="questionBody"></p>
+
+          <!-- 正答表示（トグルで表示/非表示） -->
+          <div class="answer-reveal" id="answerReveal" aria-live="polite">
+            <span class="answer-label">正解：</span>
+            <span class="answer-text" id="answerText"></span>
+          </div>
+
+          <!-- 正答確認ボタン -->
+          <div class="actions-row">
+            <button class="btn primary" id="btnToggleAnswer">正答確認</button>
+          </div>
+
+          <!-- ○ △ × 採点ボタン -->
+          <div class="grade-row" role="group" aria-label="採点">
+            <button class="btn success large" id="btnGradeMaru" data-grade="maru">○</button>
+            <button class="btn warning large" id="btnGradeSankaku" data-grade="sankaku">△</button>
+            <button class="btn danger large" id="btnGradeBatsu" data-grade="batsu">×</button>
+          </div>
+        </div>
+      </article>
+
+      <!-- 出題コントロール -->
+      <section class="card control-card" id="exerciseControls">
+        <header class="card-header">
+          <h3>出題コントロール</h3>
+        </header>
+        <div class="card-body control-grid">
+          <!-- 1) 通常スタート -->
+          <div class="control-block">
+            <label class="control-label">全問題から出題</label>
+            <div class="control-actions">
+              <button class="btn primary" id="btnStartAll">出題スタート</button>
+            </div>
+          </div>
+
+          <!-- 2) スコアしきい値指定 -->
+          <div class="control-block">
+            <label class="control-label" for="scoreThreshold">スコア ≤ しきい値 から出題</label>
+            <div class="control-actions">
+              <input type="number" id="scoreThreshold" class="input number" step="0.5" value="3" aria-label="スコアしきい値" />
+              <button class="btn" id="btnStartByThreshold">しきい値で出題</button>
+            </div>
+            <p class="control-hint">※ 例：3 や 4.5 など自由に変更できます</p>
+          </div>
+
+          <!-- 3) カテゴリ別出題 -->
+          <div class="control-block">
+            <label class="control-label" for="categorySelect">カテゴリ別に出題</label>
+            <div class="control-actions">
+              <select id="categorySelect" class="input select" aria-label="カテゴリ選択">
+                <option value="">すべて</option>
+                <!-- JSでカテゴリを追加 -->
+              </select>
+              <button class="btn" id="btnStartByCategory">このカテゴリで出題</button>
+            </div>
+          </div>
+
+          <!-- 4) カテゴリ + スコアしきい値 -->
+          <div class="control-block">
+            <label class="control-label" for="categorySelectCombo">カテゴリ & スコア ≤ しきい値</label>
+            <div class="control-actions combo">
+              <select id="categorySelectCombo" class="input select" aria-label="カテゴリ選択（複合）">
+                <option value="">すべて</option>
+                <!-- JSでカテゴリを追加 -->
+              </select>
+              <input type="number" id="scoreThresholdCombo" class="input number" step="0.5" value="3" aria-label="スコアしきい値（複合）" />
+              <button class="btn" id="btnStartByCategoryAndThreshold">カテゴリ×しきい値で出題</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <!-- ===== B: 入力タブ ===== -->
+    <section class="panel" id="tabB" role="tabpanel" aria-labelledby="tabBtnB">
+      <article class="card input-card">
+        <header class="card-header">
+          <h2>問題の作成</h2>
+        </header>
+        <div class="card-body input-grid">
+          <!-- 問題 -->
+          <div class="field">
+            <label for="newQuestion" class="label">問題</label>
+            <textarea id="newQuestion" class="input textarea" rows="4" placeholder="例：○○を4つ述べよ など"></textarea>
+          </div>
+
+          <!-- 解答（複数可） -->
+          <div class="field">
+            <div class="label-row">
+              <label class="label">解答（複数可）</label>
+              <div class="answer-actions">
+                <button class="btn ghost" id="btnAddAnswer">＋ 解答欄を追加</button>
+                <button class="btn ghost" id="btnRemoveAnswer">－ 最後を削除</button>
+              </div>
+            </div>
+
+            <!-- 可変個の解答入力リスト（JSで増減） -->
+            <div id="answersList" class="answers-list">
+              <!-- 初期の1行（JSで複製用テンプレ扱いも可） -->
+              <div class="answer-row" data-answer-index="0">
+                <input type="text" class="input text answer-input" placeholder="解答1" />
+              </div>
+            </div>
+            <p class="control-hint">※ 解答欄は問題の内容に応じて自由に増減できます</p>
+          </div>
+
+          <!-- カテゴリ -->
+          <div class="field">
+            <label for="newCategory" class="label">カテゴリ</label>
+            <input id="newCategory" class="input text" type="text" placeholder="例：歴史 / 英単語 / 法規 など" />
+          </div>
+
+          <!-- 保存ボタン -->
+          <div class="field actions-row">
+            <button class="btn primary" id="btnSaveQuestion">保存</button>
+            <button class="btn ghost" id="btnClearForm">クリア</button>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- ===== C: 確認タブ（箱のみ） ===== -->
+    <section class="panel" id="tabC" role="tabpanel" aria-labelledby="tabBtnC">
+      <article class="card">
+        <header class="card-header">
+          <h2>確認（C）</h2>
+        </header>
+        <div class="card-body">
+          <p>ここに問題一覧や編集UI、インポート/エクスポートなどを実装予定です。</p>
+          <div id="manageArea" class="manage-area">
+            <!-- 後でJSで生成 -->
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- ===== D: グラフタブ（箱のみ） ===== -->
+    <section class="panel" id="tabD" role="tabpanel" aria-labelledby="tabBtnD">
+      <article class="card">
+        <header class="card-header">
+          <h2>グラフ（D）</h2>
+        </header>
+        <div class="card-body">
+          <p>ここにカテゴリ別スコア可視化のグラフを実装予定です。</p>
+          <div id="chartArea" class="chart-area">
+            <!-- 後で <canvas id="scoreChart"> などをJSで追加 -->
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <!-- ========== フッター（任意） ========== -->
+  <footer class="app-footer">
+    <div class="container">
+      <small>&copy; <span id="yearCopy">2025</span> 暗記アプリDX</small>
+    </div>
+  </footer>
+</body>
+</html>
